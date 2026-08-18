@@ -1,9 +1,9 @@
--- Tell Postgres to use your specific schema
-SET search_path TO ride_hailing_dwh;
+-- Set the default search path to the schema
+SET search_path TO base;
 
--- 1. Create Dimension Tables (Independent)
+-- 1. Create Independent Tables
 
-CREATE TABLE dim_riders (
+CREATE TABLE riders (
     rider_id      SERIAL            PRIMARY KEY,
     first_name    VARCHAR(100)      NOT NULL,
     last_name     VARCHAR(100)      NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE dim_riders (
     banned_reason TEXT
 );
 
-CREATE TABLE dim_drivers (
+CREATE TABLE drivers (
     driver_id      SERIAL           PRIMARY KEY,
     first_name     VARCHAR(100)     NOT NULL,
     last_name      VARCHAR(100)     NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE dim_drivers (
     banned_reason  TEXT
 );
 
-CREATE TABLE dim_promotions (
+CREATE TABLE promotions (
     promotion_id    SERIAL          PRIMARY KEY,
     code            VARCHAR(50)     UNIQUE NOT NULL,
     description     TEXT,
@@ -38,19 +38,19 @@ CREATE TABLE dim_promotions (
     active          BOOLEAN         DEFAULT TRUE
 );
 
--- 2. Create Dimension Tables (Dependent)
+-- 2. Create Dependent Tables (Level 1)
 
-CREATE TABLE dim_driver_documents (
+CREATE TABLE driver_documents (
     document_id         SERIAL         PRIMARY KEY,
     driver_id           INTEGER        NOT NULL,
     document_type       VARCHAR(100),
     document_number     VARCHAR(100),
     expiry_date         DATE,
     verification_status VARCHAR(50),
-    FOREIGN KEY         (driver_id)    REFERENCES dim_drivers(driver_id) ON DELETE CASCADE
+    FOREIGN KEY         (driver_id)    REFERENCES drivers(driver_id) ON DELETE CASCADE
 );
 
-CREATE TABLE dim_vehicles (
+CREATE TABLE vehicles (
     vehicle_id           SERIAL        PRIMARY KEY,
     driver_id            INTEGER       NOT NULL,
     effective_start_date TIMESTAMP,
@@ -62,12 +62,12 @@ CREATE TABLE dim_vehicles (
     plate_number         VARCHAR(50)   UNIQUE,
     color                VARCHAR(50),
     status               VARCHAR(50),
-    FOREIGN KEY          (driver_id)   REFERENCES dim_drivers(driver_id) ON DELETE CASCADE
+    FOREIGN KEY          (driver_id)   REFERENCES drivers(driver_id) ON DELETE CASCADE
 );
 
--- 3. Create Core Fact Table
+-- 3. Create Core Trip Table
 
-CREATE TABLE fact_trips (
+CREATE TABLE trips (
     trip_id             SERIAL              PRIMARY KEY,
     rider_id            INTEGER             NOT NULL,
     driver_id           INTEGER, -- Can be null if trip is requested but unassigned
@@ -86,13 +86,13 @@ CREATE TABLE fact_trips (
     duration_minutes    INTEGER,
     estimated_fare      DECIMAL(10, 2),
     final_fare          DECIMAL(10, 2),
-    FOREIGN KEY         (rider_id)          REFERENCES dim_riders(rider_id),
-    FOREIGN KEY         (driver_id)         REFERENCES dim_drivers(driver_id)
+    FOREIGN KEY         (rider_id)          REFERENCES riders(rider_id),
+    FOREIGN KEY         (driver_id)         REFERENCES drivers(driver_id)
 );
 
--- 4. Create Dependent Fact Tables
+-- 4. Create Dependent Tables (Level 2)
 
-CREATE TABLE fact_payments (
+CREATE TABLE payments (
     payment_id          SERIAL              PRIMARY KEY,
     trip_id             INTEGER             NOT NULL,
     rider_id            INTEGER             NOT NULL,
@@ -100,36 +100,36 @@ CREATE TABLE fact_payments (
     currency            VARCHAR(10)         DEFAULT 'USD',
     payment_method      VARCHAR(50),
     payment_status      VARCHAR(50),
-    FOREIGN KEY         (trip_id)           REFERENCES fact_trips(trip_id),
-    FOREIGN KEY         (rider_id)          REFERENCES dim_riders(rider_id)
+    FOREIGN KEY         (trip_id)           REFERENCES trips(trip_id),
+    FOREIGN KEY         (rider_id)          REFERENCES riders(rider_id)
 );
 
-CREATE TABLE fact_ratings (
+CREATE TABLE ratings (
     rating_id           SERIAL              PRIMARY KEY,
     trip_id             INTEGER             NOT NULL,
     rider_id            INTEGER             NOT NULL,
     driver_id           INTEGER             NOT NULL,
     rider_score         INTEGER             CHECK (rider_score BETWEEN 1 AND 5),
     driver_score        INTEGER             CHECK (driver_score BETWEEN 1 AND 5),
-    FOREIGN KEY         (trip_id)           REFERENCES fact_trips(trip_id),
-    FOREIGN KEY         (rider_id)          REFERENCES dim_riders(rider_id),
-    FOREIGN KEY         (driver_id)         REFERENCES dim_drivers(driver_id)
+    FOREIGN KEY         (trip_id)           REFERENCES trips(trip_id),
+    FOREIGN KEY         (rider_id)          REFERENCES riders(rider_id),
+    FOREIGN KEY         (driver_id)         REFERENCES drivers(driver_id)
 );
 
-CREATE TABLE fact_driver_fee_collections (
+CREATE TABLE driver_fee_collections (
     fee_id              SERIAL              PRIMARY KEY,
     driver_id           INTEGER             NOT NULL,
     trip_id             INTEGER             NOT NULL,
     fee_amount          DECIMAL(10, 2)      NOT NULL,
-    FOREIGN KEY         (driver_id)         REFERENCES dim_drivers(driver_id),
-    FOREIGN KEY         (trip_id)           REFERENCES fact_trips(trip_id)
+    FOREIGN KEY         (driver_id)         REFERENCES drivers(driver_id),
+    FOREIGN KEY         (trip_id)           REFERENCES trips(trip_id)
 );
 
-CREATE TABLE fact_trip_promotions (
+CREATE TABLE trip_promotions (
     trip_promotion_id   SERIAL              PRIMARY KEY,
     trip_id             INTEGER             NOT NULL,
     promotion_id        INTEGER             NOT NULL,
     discount_applied    DECIMAL(10, 2)      NOT NULL,
-    FOREIGN KEY         (trip_id)           REFERENCES fact_trips(trip_id),
-    FOREIGN KEY         (promotion_id)      REFERENCES dim_promotions(promotion_id)
+    FOREIGN KEY         (trip_id)           REFERENCES trips(trip_id),
+    FOREIGN KEY         (promotion_id)      REFERENCES promotions(promotion_id)
 );

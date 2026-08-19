@@ -59,7 +59,7 @@ CREATE TABLE vehicles (
     make                 VARCHAR(100),
     model                VARCHAR(100),
     year                 INTEGER,
-    plate_number         VARCHAR(50)   UNIQUE,
+    plate_number         VARCHAR(50),
     color                VARCHAR(50),
     status               VARCHAR(50),
     FOREIGN KEY          (driver_id)   REFERENCES drivers(driver_id) ON DELETE CASCADE
@@ -97,7 +97,7 @@ CREATE TABLE payments (
     trip_id             INTEGER             NOT NULL,
     rider_id            INTEGER             NOT NULL,
     amount              DECIMAL(10, 2)      NOT NULL,
-    currency            VARCHAR(10)         DEFAULT 'USD',
+    currency            VARCHAR(10)         DEFAULT 'EGP',
     payment_method      VARCHAR(50),
     payment_status      VARCHAR(50),
     FOREIGN KEY         (trip_id)           REFERENCES trips(trip_id),

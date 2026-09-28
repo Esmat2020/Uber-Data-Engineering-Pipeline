@@ -28,5 +28,5 @@ clean-targets:         # directories to be removed by `dbt clean`
 # `{{ config(...) }}` macro.
 models:
   ride_hailing:
-    staging:
+    stg:
       +materialized: view

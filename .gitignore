@@ -14,5 +14,8 @@ target/
 dbt_packages/
 logs/
 
+# dbt local telemetry ID
+.user.yml
+
 # OS
 .DS_Store

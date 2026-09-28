@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: base
+    schema: base
+    tables:
+      - name: driver_documents
+      - name: driver_fee_collections
+      - name: drivers
+      - name: payments
+      - name: promotions
+      - name: ratings
+      - name: riders
+      - name: trip_promotions
+      - name: trips
+      - name: vehicles

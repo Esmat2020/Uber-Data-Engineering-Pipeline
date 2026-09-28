@@ -1,0 +1,14 @@
+ride_hailing:
+
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "<your-neon-host>.neon.tech"
+      user: "<your-db-user>"
+      password: "<your-db-password>"
+      port: 5432
+      dbname: neondb
+      schema: dbt_dev
+      threads: 4
+      sslmode: require
